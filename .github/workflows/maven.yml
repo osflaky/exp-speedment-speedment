@@ -1,0 +1,50 @@
+#
+#
+# Copyright (c) 2006-2020, Speedment, Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); You may not
+# use this file except in compliance with the License. You may obtain a copy of
+# the License at:
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations under
+# the License.
+#
+
+name: Java CI with Maven
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # test against latest update of each major Java version, as well as specific updates of LTS versions:
+        include:
+        - java: 11
+          os: macos-latest
+          arch: arm64
+          runner: macos-latest
+          expander_leg: macos-latest--arm64
+    name: Java ${{ matrix.java }} [${{ matrix.expander_leg }}]
+
+    steps:
+    - uses: actions/checkout@v3.5.3
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: ${{ matrix.distribution || 'zulu' }}
+        java-version: ${{ matrix.java }}
+        architecture: ${{ matrix.arch == 'arm64' && 'aarch64' || 'x64' }}
+    - name: Build with Maven
+      shell: bash
+      run: mvn -B package --file pom.xml "-Prelease,headless"
+    timeout-minutes: 150
